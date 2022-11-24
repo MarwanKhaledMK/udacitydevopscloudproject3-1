@@ -154,70 +154,70 @@ jobs:
             npm audit fix --audit-level=critical --force
       
 
-  # deploy-infrastructure:
-  #   <<: *awsimage
-  #   parameters: *parameter
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Install tar and gzip. # Workspace attachment needs tar and gzip which is not in awsimage https://www.youtube.com/watch?v=RhkaSfBlqCk 
-  #         command: |
-  #           yum install -y tar gzip
-  #     - run:
-  #         name: Ensure back-end infrastructure exists
-  #         command: |
-  #           aws cloudformation deploy \
-  #             --template-file .circleci/files/backend.yml \
-  #             --tags project=udapeople \
-  #             --stack-name "udapeople-backend-<< parameters.workflow_id >>" \
-  #             --parameter-overrides ID="<< parameters.workflow_id >>"
-  #     - run:
-  #         name: Ensure front-end infrastructure exist
-  #         command: |
-  #           aws cloudformation deploy \
-  #             --template-file .circleci/files/frontend.yml \
-  #             --tags project=udapeople \
-  #             --stack-name "udapeople-frontend-<< parameters.workflow_id >>" \
-  #             --parameter-overrides ID="<< parameters.workflow_id >>"
-  #     - run:
-  #         name: Add back-end ip to ansible inventory
-  #         command: |
-  #           aws ec2 describe-instances \
-  #             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-  #             --filter "Name=tag:project, Values=udapeople" \
-  #             --output text >> .circleci/ansible/inventory.txt
+  deploy-infrastructure:
+    <<: *awsimage
+    parameters: *parameter
+    steps:
+      - checkout
+      - run:
+          name: Install tar and gzip. # Workspace attachment needs tar and gzip which is not in awsimage https://www.youtube.com/watch?v=RhkaSfBlqCk 
+          command: |
+            yum install -y tar gzip
+      - run:
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/backend.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-backend-<< parameters.workflow_id >>" \
+              --parameter-overrides ID="<< parameters.workflow_id >>"
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/frontend.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-frontend-<< parameters.workflow_id >>" \
+              --parameter-overrides ID="<< parameters.workflow_id >>"
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filter "Name=tag:project, Values=udapeople" \
+              --output text >> .circleci/ansible/inventory.txt
 
-  #     - persist_to_workspace:
-  #         root: ~/
-  #         paths:
-  #           - project/.circleci/ansible/inventory.txt
-  #     - slack/notify:
-  #         event: fail
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/inventory.txt
+      - slack/notify:
+          event: fail
 
-  #     - destroy-environment
+      - destroy-environment
 
-  # configure-infrastructure:
-  #   <<: *pythonalpineimage
-  #   steps:
-  #     - checkout
-  #     - add_ssh_keys:
-  #         fingerprints: ["67:e3:9b:88:64:18:28:88:ad:3d:c7:21:df:22:9e:e2"]
-  #     - attach_workspace:
-  #         at: ~/
-  #     - run:
-  #         name: Install dependencies
-  #         command: |
-  #           apk add --update ansible
-  #           pip install awscli
-  #     - run:
-  #         name: Configure server
-  #         no_output_timeout: 15m
-  #         command: |
-  #           cd .circleci/ansible
-  #           cat inventory.txt
-  #           ansible-playbook configure-server.yml -i inventory.txt
+  configure-infrastructure:
+    <<: *pythonalpineimage
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["b4:a0:d4:2d:fe:df:e0:9f:8c:73:86:cf:b1:db:87:19"]
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            pip install awscli
+      - run:
+          name: Configure server
+          no_output_timeout: 15m
+          command: |
+            cd .circleci/ansible
+            cat inventory.txt
+            ansible-playbook configure-server.yml -i inventory.txt
 
-  #     - destroy-environment
+      - destroy-environment
 
   # run-migrations:
   #   <<: *nodeimage
