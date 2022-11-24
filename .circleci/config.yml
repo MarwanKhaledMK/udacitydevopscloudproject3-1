@@ -1,6 +1,6 @@
 nodeimage: &nodeimage
   docker:
-    - image: cimg/node:13.8.0
+    - image: circleci/node:13.8.0
 pythonalpineimage: &pythonalpineimage
   docker:
     - image: python:3.7-alpine3.11
@@ -137,7 +137,7 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
       
-      
+
   scan-backend:
     <<: *nodeimage
     steps:
