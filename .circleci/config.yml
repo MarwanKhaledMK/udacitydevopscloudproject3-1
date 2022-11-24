@@ -320,8 +320,7 @@ jobs:
       - revert-migrations      
 
   smoke-test:
-    docker:
-      - image: alpine:latest
+    <<: *pythonalpineimage
     parameters: *parameter
     steps:
       - checkout
