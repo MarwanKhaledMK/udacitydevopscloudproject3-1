@@ -38,7 +38,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            SUCCESS=$(curl --insecure  https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>)
+            SUCCESS=$(curl --insecure  https://kvdb.io/AvCNFduHzfpm2xT8u6dZEL/migration_<< parameters.workflow_id >>)
             echo $SUCCESS
             if [ "$SUCCESS" -eq 1 ]; then
               echo 'success'
@@ -216,196 +216,196 @@ jobs:
 
       - destroy-environment
 
-  # run-migrations:
-  #   <<: *nodeimage
-  #   parameters: *parameter
-  #   steps:
-  #     - checkout
-  #     - restore_cache:
-  #         keys:
-  #           - backend-build
-  #     - aws-cli/setup
-  #     - run:
-  #         name: Run migrations and save status into a text
-  #         command: |
-  #           cd backend
-  #           npm install
-  #           npm run migrations > migrations_dump.txt
-  #           cat migrations_dump.txt
-  #     - run:
-  #         name: Check if migration succeeded 
-  #         command: |
-  #           if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt 
-  #           then
-  #             echo "Migration succeeded"
-  #             # curl --insecure or curl -k
-  #             curl -k https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>  -d '1'
-  #           else 
-  #             echo "Migration failed"
-  #           fi
+  run-migrations:
+    <<: *nodeimage
+    parameters: *parameter
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - backend-build
+      - aws-cli/setup
+      - run:
+          name: Run migrations and save status into a text
+          command: |
+            cd backend
+            npm install
+            npm run migrations > migrations_dump.txt
+            cat migrations_dump.txt
+      - run:
+          name: Check if migration succeeded 
+          command: |
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt 
+            then
+              echo "Migration succeeded"
+              # curl --insecure or curl -k
+              curl -k https://kvdb.io/AvCNFduHzfpm2xT8u6dZEL/migration_<< parameters.workflow_id >>  -d '1'
+            else 
+              echo "Migration failed"
+            fi
 
-  #     - revert-migrations
-  #     - destroy-environment
+      - revert-migrations
+      - destroy-environment
 
-  # deploy-frontend:
-  #   <<: *nodeimage
-  #   parameters: *parameter
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Install dependencies
-  #         command: |
-  #           sudo apt-get -qq update 
-  #           sudo apt-get install -y -qq tar gzip  
-  #           # sudo apt-get install -y -qq curl
-  #     - aws-cli/setup
-  #     - run:
-  #         name: Get backend url
-  #         command: |
-  #           export BACKEND_IP=$(aws ec2 describe-instances \
-  #             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-  #             --filter "Name=tag:project, Values=udapeople" \
-  #             --output text)
-  #           export API_URL="http://${BACKEND_IP}:3030"
-  #           echo "${API_URL}"
-  #           echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
-  #           cat frontend/.env
-  #     - run:
-  #         name: Deploy frontend objects
-  #         command: |
-  #           cd frontend
-  #           npm install
-  #           npm run build
-  #           tar -czvf artifact-"<< parameters.workflow_id >>".tar.gz dist
-  #           aws s3 cp dist s3://udapeople-<< parameters.workflow_id >> --recursive
+  deploy-frontend:
+    <<: *nodeimage
+    parameters: *parameter
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get -qq update 
+            sudo apt-get install -y -qq tar gzip  
+            # sudo apt-get install -y -qq curl
+      - aws-cli/setup
+      - run:
+          name: Get backend url
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filter "Name=tag:project, Values=udapeople" \
+              --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
+      - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend
+            npm install
+            npm run build
+            tar -czvf artifact-"<< parameters.workflow_id >>".tar.gz dist
+            aws s3 cp dist s3://udapeople-<< parameters.workflow_id >> --recursive
  
-  #     - destroy-environment
-  #     - revert-migrations
+      - destroy-environment
+      - revert-migrations
 
-  # deploy-backend:
-  #   <<: *pythonalpineimage
-  #   steps:
-  #     - checkout
-  #     - add_ssh_keys:
-  #         fingerprints: ["67:e3:9b:88:64:18:28:88:ad:3d:c7:21:df:22:9e:e2"]
-  #     - attach_workspace:
-  #         at: ~/          
-  #     - run:
-  #         name: Install dependencies
-  #         command: |
-  #           apk update
-  #           apk add --update ansible
-  #           apk add --update npm nodejs
-  #           apk add --update tar gzip 
-  #           # apk add curl
+  deploy-backend:
+    <<: *pythonalpineimage
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["b4:a0:d4:2d:fe:df:e0:9f:8c:73:86:cf:b1:db:87:19"]
+      - attach_workspace:
+          at: ~/          
+      - run:
+          name: Install dependencies
+          command: |
+            apk update
+            apk add --update ansible
+            apk add --update npm nodejs
+            apk add --update tar gzip 
+            # apk add curl
 
-  #     - aws-cli/setup
-  #     - run:
-  #         name: Deploy backend
-  #         command: |
-  #           cd backend
-  #           npm i
-  #           npm run build
-  #           cd ..
-  #           tar -C backend -czvf artifact.tar.gz .
-  #           ls
-  #           mkdir -p ./.circleci/ansible/roles/deploy/files
-  #           cp -r artifact.tar.gz ./.circleci/ansible/roles/deploy/files/
-  #           cd .circleci/ansible
-  #           echo "Contents  of the inventory.txt file is -------"
-  #           cat inventory.txt
-  #           ansible-playbook -i inventory.txt deploy-backend.yml
-  #     # you have to be outside a file to tar it. czvf tars everything into the backend folder
-  #     - destroy-environment
-  #     - revert-migrations      
+      - aws-cli/setup
+      - run:
+          name: Deploy backend
+          command: |
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            tar -C backend -czvf artifact.tar.gz .
+            ls
+            mkdir -p ./.circleci/ansible/roles/deploy/files
+            cp -r artifact.tar.gz ./.circleci/ansible/roles/deploy/files/
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      # you have to be outside a file to tar it. czvf tars everything into the backend folder
+      - destroy-environment
+      - revert-migrations      
 
-  # smoke-test:
-  #   docker:
-  #     - image: alpine:latest
-  #   parameters: *parameter
-  #   steps:
-  #     - checkout
-  #     - aws-cli/setup
-  #     - run:
-  #         name: Install dependencies
-  #         command: |
-  #           apk update
-  #           apk add --update curl
-  #           apk add --update npm nodejs
-  #     - run:
-  #         name: Get backend url and do backend smoke test.
-  #         no_output_timeout: 15m
-  #         command: |
-  #           export BACKEND_IP=$(aws ec2 describe-instances \
-  #             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-  #             --filter "Name=tag:project, Values=udapeople" \
-  #             --output text)
-  #           export API_URL="http://${BACKEND_IP}:3030"
-  #           echo "${API_URL}"
-  #           sleep 60
-  #           if curl "${API_URL}/api/status" | grep "ok"
-  #           then
-  #             echo "Backend passed smoke test"
-  #             return 0
-  #           else
-  #             echo "Backend failed smoke test"
-  #             return 1
-  #           fi
-  #     - run:
-  #         name: Frontend smoke test.
-  #         command: |
-  #           URL="http://udapeople-<< parameters.workflow_id >>.s3-website-us-east-1.amazonaws.com/#/employees"            
-  #           echo ${URL} 
-  #           if curl -s ${URL} | grep "Welcome"
-  #           then
-  #             echo "Frontend passed smoke test"
-  #             return 0
-  #           else
-  #             echo "Frontend failed smoke test"
-  #             return 1
-  #           fi
-  #     # Here's where you will add some code to rollback on failure
-  #     - empty-bucket
-  #     - revert-migrations
-  #     - destroy-environment
+  smoke-test:
+    docker:
+      - image: alpine:latest
+    parameters: *parameter
+    steps:
+      - checkout
+      - aws-cli/setup
+      - run:
+          name: Install dependencies
+          command: |
+            apk update
+            apk add --update curl
+            apk add --update npm nodejs
+      - run:
+          name: Get backend url and do backend smoke test.
+          no_output_timeout: 15m
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filter "Name=tag:project, Values=udapeople" \
+              --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            sleep 60
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+              echo "Backend passed smoke test"
+              return 0
+            else
+              echo "Backend failed smoke test"
+              return 1
+            fi
+      - run:
+          name: Frontend smoke test.
+          command: |
+            URL="http://udapeople-<< parameters.workflow_id >>.s3-website-us-east-1.amazonaws.com/#/employees"            
+            echo ${URL} 
+            if curl -s ${URL} | grep "Welcome"
+            then
+              echo "Frontend passed smoke test"
+              return 0
+            else
+              echo "Frontend failed smoke test"
+              return 1
+            fi
+      # Here's where you will add some code to rollback on failure
+      - empty-bucket
+      - revert-migrations
+      - destroy-environment
 
-  # cloudfront-update:
-  #   <<: *awsimage
-  #   parameters: *parameter
-  #   steps:
-  #     - checkout
-  #     - run: #Workspace attachment needs tar and gzip which is not in awsimage 
-  #         name: Install tar and gzip.
-  #         command: |
-  #           yum install -y tar gzip 
-  #           curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
-  #           yum -y install nodejs
-  #     - run:
-  #         name: Update cloudfront distribution
-  #         command: |
-  #           # Fetch the old workflow ID
-  #           export OldWorkflowID=$(aws cloudformation \
-  #             list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-  #             --no-paginate --output text)
-  #           echo "$OldWorkflowID" >> ~/OldWorkflowID.txt
-  #           cat ~/OldWorkflowID.txt
+  cloudfront-update:
+    <<: *awsimage
+    parameters: *parameter
+    steps:
+      - checkout
+      - run: #Workspace attachment needs tar and gzip which is not in awsimage 
+          name: Install tar and gzip.
+          command: |
+            yum install -y tar gzip 
+            curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
+            yum -y install nodejs
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            # Fetch the old workflow ID
+            export OldWorkflowID=$(aws cloudformation \
+              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              --no-paginate --output text)
+            echo "$OldWorkflowID" >> ~/OldWorkflowID.txt
+            cat ~/OldWorkflowID.txt
 
-  #           aws cloudformation deploy \
-  #             --template-file .circleci/files/cloudfront.yml \
-  #             --stack-name udapeople-cloudfront-stack \
-  #             --parameter-overrides WorkflowID="<< parameters.workflow_id >>" \
-  #             --tags project=udapeople
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --stack-name udapeople-cloudfront-stack \
+              --parameter-overrides WorkflowID="<< parameters.workflow_id >>" \
+              --tags project=udapeople
             
-  #           echo "OldWorkflowID: ${OldWorkflowID}"
-  #           echo "Current WorkflowID: << parameters.workflow_id >>"
-  #     - persist_to_workspace:
-  #         root: ~/
-  #         paths:
-  #           - OldWorkflowID.txt
-  #     # Here's where you will add some code to rollback on failure
-  #     - empty-bucket
-  #     - destroy-environment
-  #     - revert-migrations  
+            echo "OldWorkflowID: ${OldWorkflowID}"
+            echo "Current WorkflowID: << parameters.workflow_id >>"
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - OldWorkflowID.txt
+      # Here's where you will add some code to rollback on failure
+      - empty-bucket
+      - destroy-environment
+      - revert-migrations  
 
   # cleanup:
   #   <<: *awsimage
